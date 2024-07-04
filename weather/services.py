@@ -165,7 +165,7 @@ class WeatherForecast:
         avg_temp = self._get_avg_forcast(_data)
         return {
             "district": self.district["name"],
-            "average_temperature": avg_temp,
+            "averageTemperature": avg_temp,
         }
 
     def fetch_temperature_for_day(self, date: str, session: httpx.Client):
