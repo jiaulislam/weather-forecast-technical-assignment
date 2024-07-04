@@ -47,5 +47,5 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="openapi"),
         name="swagger-ui",
     ),
-    path(f"{V1}/weather/", include("weather_finder.urls")),
+    path(f"{V1}/weather/", include("weather.urls")),
 ]

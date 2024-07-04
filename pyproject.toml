@@ -22,6 +22,13 @@ black = "^24.4.2"
 pre-commit = "^3.7.1"
 poetry-plugin-export = "^1.8.0"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.2"
+pytest-asyncio = "^0.23.7"
+pytest-django = "^4.8.0"
+responses = "^0.25.3"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
