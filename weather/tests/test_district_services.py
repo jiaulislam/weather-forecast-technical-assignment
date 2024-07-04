@@ -32,7 +32,7 @@ async def test_get_districts_from_api(district_service):
         return httpx.Response(status_code=200, json=mock_response_data)
 
     with patch("httpx.AsyncClient.get", new=mock_get):
-        districts = await district_service.get()
+        districts = await district_service.aget()
         assert len(districts) == 2
         assert districts[0]["name"] == "District 1"
         assert cache.get("districts_data") == mock_response_data["districts"]
@@ -47,7 +47,7 @@ async def test_get_districts_from_cache(district_service):
     ]
     cache.set("districts_data", cached_data, timeout=TWO_HOUR_CACHE_TIME)
 
-    districts = await district_service.get()
+    districts = await district_service.aget()
     assert len(districts) == 2
     assert districts[0]["name"] == "Cached District 1"
 
