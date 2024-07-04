@@ -25,9 +25,9 @@ class DistrictService:
             raise ValueError("URL is required to fetch districts")
         self.url = url
 
-    async def get(self) -> List[Dict[str, str]]:
+    async def aget(self) -> List[Dict[str, str]]:
         """
-        Fetches the list of districts from the API or cache.
+        Fetches the list of districts from the API or cache Async Way.
 
         Returns:
         List[Dict[str, str]]: A list of dictionaries containing district data.
@@ -54,9 +54,38 @@ class DistrictService:
 
         return districts_data
 
+    def get(self) -> List[Dict[str, str]]:
+        """
+        Fetches the list of districts from the API or cache.
+
+        Returns:
+        List[Dict[str, str]]: A list of dictionaries containing district data.
+
+        Raises:
+        RemoteCallException: If the API call fails to fetch the district data.
+        """
+        # Check if the district data is available in the cache
+        cached_districts = cache.get("districts_data")
+        if cached_districts is not None:
+            return cached_districts
+
+        # If not cached, fetch the data from the remote API
+        with httpx.Client() as session:
+            response = session.get(self.url)
+
+            if response.status_code != status.HTTP_200_OK:
+                raise RemoteCallException("Couldn't Fetch Data for Districts API")
+            # Parse the response JSON to extract district data
+            districts_data = response.json().get("districts", [])
+
+        # Cache the fetched district data for 2 hours
+        cache.set("districts_data", districts_data, timeout=TWO_HOUR_CACHE_TIME)
+
+        return districts_data
+
 
 class WeatherForecast:
-    def __init__(self, district):
+    def __init__(self, district, days=7, mode="csv"):
         """
         Initializes the WeatherForecast instance with district data and constructs the API URL.
 
@@ -64,9 +93,11 @@ class WeatherForecast:
         district (dict): A dictionary containing district information including latitude and longitude.
         """
         self.district = district
+        self.days = days
+        self.mode = mode
         # Calculate the start and end dates for the weather forecast (7-day period)
         start_day = datetime.today()
-        end_day = start_day + timedelta(days=7)
+        end_day = start_day + timedelta(days=self.days)
         start_day_str = start_day.strftime("%Y-%m-%d")
         end_day_str = end_day.strftime("%Y-%m-%d")
 
@@ -74,7 +105,7 @@ class WeatherForecast:
         self.api_url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={self.district['lat']}"
             f"&longitude={self.district['long']}&start_date={start_day_str}"
-            f"&end_date={end_day_str}&hourly=temperature_2m&timezone=Asia/Dhaka&format=csv"
+            f"&end_date={end_day_str}&hourly=temperature_2m&timezone=Asia/Dhaka&format={self.mode}"
         )
 
     async def _download_csv_data(self, session):
@@ -136,3 +167,30 @@ class WeatherForecast:
             "district": self.district["name"],
             "average_temperature": avg_temp,
         }
+
+    def fetch_temperature_for_day(self, date: str, session: httpx.Client):
+        """
+        Fetches the temperature at a specific time of day (18:00) for the given date
+        using the provided HTTP session.
+
+        Args:
+        - date (str): The date for which to fetch the temperature in "YYYY-MM-DD" format.
+        - session (httpx.Client): An HTTP client session to use for making the API request.
+
+        Returns:
+        - float: The temperature at 18:00 for the specified date, in degrees Celsius.
+
+        Raises:
+        - HTTPStatusError: If the API request fails or returns an error status code.
+        - KeyError: If the expected temperature data is not found in the API response.
+        """
+        self.start_day_str = date
+        self.end_day_str = date
+        response = session.get(self.api_url)
+        response.raise_for_status()
+
+        data = response.json()
+
+        temperature = data["hourly"]["temperature_2m"][18]
+
+        return temperature
