@@ -89,4 +89,6 @@ For development purpose before commiting on the project please install `pre-comm
 
 ```sh
 poetry add -G dev pre-commit
+pre-commit install
+pre-commit run -c ./pre-commit-config.yaml
 ```
